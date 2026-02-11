@@ -4,53 +4,247 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <meta name="robots" content="noindex, nofollow">
-
 <title>Just for You ❤️</title>
 
 <style>
-  body {
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-    background: #fff0f5;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    margin: 0;
-    overflow: hidden;
-  }
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #fff0f5;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+  overflow: hidden;
+}
 
-  .container {
-    text-align: center;
-    max-width: 360px;
-    padding: 10px;
-  }
+.container {
+  text-align: center;
+  max-width: 360px;
+  padding: 10px;
+}
 
-  input {
-    padding: 10px;
-    font-size: 16px;
-    width: 100%;
-    margin-top: 10px;
-  }
+input {
+  padding: 10px;
+  font-size: 16px;
+  width: 100%;
+  margin-top: 10px;
+}
 
-  button {
-    margin-top: 15px;
-    padding: 12px 24px;
-    background: #ff4d6d;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 16px;
-    cursor: pointer;
-  }
+button {
+  margin-top: 15px;
+  padding: 12px 24px;
+  background: #ff4d6d;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+}
 
+#puzzle {
+  display: grid;
+  grid-template-columns: repeat(3, 100px);
+  grid-gap: 5px;
+  margin: 20px auto;
+  touch-action: manipulation;
+}
+
+.piece {
+  width: 100px;
+  height: 100px;
+  background-image: url("photo.jpg");
+  background-size: 300px 300px;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+#nextBtn {
+  display: none;
+}
+
+#puzzleScreen, #finalScreen {
+  display: none;
+}
+
+#finalScreen button {
+  margin: 10px;
+  padding: 12px 24px;
+  border-radius: 8px;
+  border: none;
+  font-size: 16px;
+}
+
+#yesBtn {
+  background-color: #ff4d6d;
+  color: white;
+}
+
+#noBtn {
+  background-color: #ccc;
+  color: black;
+  position: relative;
+  transition: transform 0.2s;
+}
+
+.confetti {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  top: 0;
+  left: 50%;
+  pointer-events: none;
+  animation: fall 1s linear forwards;
+}
+
+@keyframes fall {
+  to {
+    transform: translateY(500px) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+@media (max-width: 400px) {
   #puzzle {
-    display: grid;
-    grid-template-columns: repeat(3, 100px);
-    grid-gap: 5px;
-    margin: 20px auto;
-    touch-action: manipulation;
+    grid-template-columns: repeat(3, 90px);
   }
-
   .piece {
-    width: 100px;
-    heigh
+    width: 90px;
+    height: 90px;
+  }
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+  <!-- PASSCODE SCREEN -->
+  <div id="lockScreen">
+    <h2>Before you begin 💌</h2>
+    <p>Enter the passcode</p>
+    <input type="password" id="codeInput" placeholder="Hint: you know this <3">
+    <button onclick="unlock()">Unlock</button>
+  </div>
+
+  <!-- PUZZLE SCREEN -->
+  <div id="puzzleScreen">
+    <h2>Solve this first 🧩</h2>
+    <div id="puzzle"></div>
+    <button id="nextBtn" onclick="showFinal()">Next ❤️</button>
+  </div>
+
+  <!-- FINAL SCREEN -->
+  <div id="finalScreen">
+    <h1>Will you be my Valentine? 💖</h1>
+    <button id="yesBtn" onclick="yesClicked()">Yes 💖</button>
+    <button id="noBtn" onclick="noClicked()">No 😢</button>
+  </div>
+
+</div>
+
+<script>
+const PASSCODE = "24/08"; // change this to your special code
+
+const lockScreen = document.getElementById("lockScreen");
+const puzzleScreen = document.getElementById("puzzleScreen");
+const nextBtn = document.getElementById("nextBtn");
+const puzzle = document.getElementById("puzzle");
+const noBtn = document.getElementById("noBtn");
+
+function unlock() {
+  const input = document.getElementById("codeInput").value;
+  if (input === PASSCODE) {
+    lockScreen.style.display = "none";
+    puzzleScreen.style.display = "block";
+  } else {
+    alert("Wrong code ❤️ Try again");
+  }
+}
+
+// PUZZLE LOGIC (tap-to-swap)
+let positions = [...Array(9).keys()];
+positions.sort(() => Math.random() - 0.5);
+
+positions.forEach(pos => {
+  const piece = document.createElement("div");
+  piece.className = "piece";
+  piece.style.backgroundPosition = `-${(pos % 3) * 100}px -${Math.floor(pos / 3) * 100}px`;
+  piece.dataset.correct = pos;
+  puzzle.appendChild(piece);
+});
+
+let firstPiece = null;
+
+document.querySelectorAll(".piece").forEach(piece => {
+  piece.addEventListener("click", () => {
+    if (!firstPiece) {
+      firstPiece = piece;
+      piece.style.border = "2px solid gold";
+    } else {
+      swap(firstPiece, piece);
+      firstPiece.style.border = "";
+      firstPiece = null;
+      checkWin();
+    }
+  });
+});
+
+function swap(a, b) {
+  [a.style.backgroundPosition, b.style.backgroundPosition] =
+  [b.style.backgroundPosition, a.style.backgroundPosition];
+  [a.dataset.correct, b.dataset.correct] =
+  [b.dataset.correct, a.dataset.correct];
+}
+
+function checkWin() {
+  const pieces = document.querySelectorAll(".piece");
+  let correct = 0;
+  pieces.forEach((p, i) => {
+    if (p.dataset.correct == i) correct++;
+  });
+  if (correct === 9) {
+    nextBtn.style.display = "inline-block";
+  }
+}
+
+function showFinal() {
+  puzzleScreen.style.display = "none";
+  document.getElementById("finalScreen").style.display = "block";
+}
+
+// YES / NO logic
+function yesClicked() {
+  document.getElementById("finalScreen").innerHTML = `
+    <h1>Yay! You said YES! 💖</h1>
+    <p>Can’t wait for Valentine’s Day with you ❤️</p>
+  `;
+  launchConfetti();
+}
+
+function noClicked() {
+  alert("Hmm… let's try that again 😉");
+  yesClicked();
+}
+
+// NO button dodge effect
+noBtn.addEventListener("mouseenter", () => {
+  const x = Math.random() * 120;
+  const y = Math.random() * 50;
+  noBtn.style.transform = `translate(${x}px, ${y}px)`;
+});
+
+// Confetti animation
+function launchConfetti() {
+  for(let i=0; i<30; i++){
+    const confetti = document.createElement('div');
+    confetti.className = 'confetti';
+    confetti.style.left = `${Math.random()*100}%`;
+    confetti.style.backgroundColor = `hsl(${Math.random()*360}, 100%, 50%)`;
+    document.body.appendChild(confetti);
+    setTimeout(() => confetti.remove(), 1000);
+  }
+}
+</script>
+</body>
+</html>
